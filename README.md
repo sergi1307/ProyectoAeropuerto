@@ -45,17 +45,29 @@ La aplicación permite conocer la disponibilidad de **conexiones directas e indi
 **Tabla: cities**
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| id    | INT  | Identificador único |
-| name  | VARCHAR | Nombre de la ciudad |
-| country | VARCHAR | País de la ciudad |
+| id*    | INT  | Identificador único |
+| nombre  | VARCHAR | Nombre de la ciudad |
+| pais | VARCHAR | País de la ciudad |
+| poblacion | INT | Número total de habitantes |
+| zonaHoraria | VARCHAR | Zona horaria a la que pertenece |
+| latitud | INT | Latitud geográfica |
+| longitud | INT | Longitud geográfica |
+| elevación | INT | Altura sobre el nivel del mar |
+| anyoFundacion | INT | Año en que se fundó la ciudad |
 
 **Tabla: airports**
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| id    | INT  | Identificador único |
+| id*    | INT  | Identificador único |
 | name  | VARCHAR | Nombre del aeropuerto |
+| iata | VARCHAR | Código IATA del aeropuerto |
 | city_id | INT | Relación con la ciudad |
-| iata_code | VARCHAR | Código IATA del aeropuerto |
+| tipo | ENUM | Regional, Nacional e Internacional |
+| latitud | INT | Latitud geográfica |
+| longitud | INT | Longitud geográfica |
+| elevacion | INT | Altura sobre el nivel del mar |
+| terminales | INT | Número total de terminales |
+| anyoApertura | INT | Año en que se inauguró el aeropuerto |
 
 **Tabla: connections**
 | Campo | Tipo | Descripción |
@@ -91,5 +103,5 @@ El proyecto se puede dividir en áreas:
 ---
 
 ## 📌 Autor
-**Equipo de Desarrollo:** Nombre del equipo o integrantes  
+**Equipo de Desarrollo:** Sergi Molina Barberà
 
