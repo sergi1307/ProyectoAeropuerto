@@ -1,11 +1,13 @@
+-- Active: 1761245540698@@127.0.0.1@3306@mysql
 DROP DATABASE IF EXISTS aeropuertos;
 
-CREATE DATABASE IF NOT EXISTS aeropuertos;
+CREATE DATABASE aeropuertos;
 
 USE aeropuertos;
 
 -- CREACIÓN DE TABLAS
 
+-- TABLA CIUDADES
 -- DROP TABLE ciudad;
 CREATE TABLE ciudad (
     id_ciudad INT PRIMARY KEY AUTO_INCREMENT,
@@ -19,6 +21,7 @@ CREATE TABLE ciudad (
     anyoFundacion INT NOT NULL
 );
 
+-- TABLA AEROPUERTOS
 -- DROP TABLE aeropuerto;
 CREATE TABLE aeropuertos (
     id_aeropuerto INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,8 +38,20 @@ CREATE TABLE aeropuertos (
     FOREIGN KEY (ciudadId) REFERENCES ciudad(id_ciudad)
 );
 
+-- TABLA RELACIÓN DE AEROPUERTOS
+-- DROP TABLE conexionesSinEscalas;
+CREATE TABLE conexionesSinEscalas (
+    id_aeropuertoOrigen INT,
+    id_aeropuertoDestino INT,
+
+    PRIMARY KEY (id_aeropuertoOrigen, id_aeropuertoDestino),
+    FOREIGN KEY (id_aeropuertoOrigen) REFERENCES aeropuertos(id_aeropuerto),
+    FOREIGN KEY (id_aeropuertoDestino) REFERENCES aeropuertos(id_aeropuerto)
+);
+
 -- INSERCIÓN DE DATOS
 
+-- DELETE FROM ciudad;
 INSERT INTO ciudad (nombre, pais, poblacion, zonaHoraria, latitud, longitud, elevacion, anyoFundacion) VALUES
 ('Nueva York', 'Estados Unidos', 8419000, 'America/New_York', 40.7128, -74.0060, 10, 1624),
 ('Londres', 'Reino Unido', 8982000, 'Europe/London', 51.5074, -0.1278, 11, 43),
@@ -89,6 +104,7 @@ INSERT INTO ciudad (nombre, pais, poblacion, zonaHoraria, latitud, longitud, ele
 ('Hanoi', 'Vietnam', 8053668, 'Asia/Bangkok', 21.0278, 105.8342, 19, 1010),
 ('Singapur', 'Singapur', 5638700, 'Asia/Singapore', 1.3521, 103.8198, 15, 1299);
 
+-- DELETE FROM aeropuertos;
 INSERT INTO aeropuertos (nombre, iata, ciudadId, tipo, latitud, longitud, elevacion, terminales, anyoApertura) VALUES
 ('John F. Kennedy International Airport', 'JFK', 1, 'Internacional', 40.6413, -73.7781, 4, 6, 1948),
 ('Heathrow Airport', 'LHR', 2, 'Internacional', 51.4700, -0.4543, 25, 4, 1946),
@@ -140,3 +156,13 @@ INSERT INTO aeropuertos (nombre, iata, ciudadId, tipo, latitud, longitud, elevac
 ('Kuala Lumpur International Airport', 'KUL', 48, 'Internacional', 2.7456, 101.7090, 21, 2, 1998),
 ('Ninoy Aquino International Airport', 'MNL', 49, 'Internacional', 14.5099, 121.0196, 23, 4, 1948),
 ('Noi Bai International Airport', 'HAN', 50, 'Internacional', 21.2210, 105.8070, 12, 2, 1978);
+
+INSERT INTO conexionesSinEscalas (id_aeropuertoOrigen, id_aeropuertoDestino) VALUES
+(1, 2), (1, 3), (1, 13), (1, 14), (11, 2), (11, 3), (11, 13),
+(8, 2), (8, 3), (8, 13), (2, 10), (3, 10), (13, 10), (14, 10),
+(9, 10), (2, 4), (3, 4), (14, 4), (2, 15), (3, 15), (21, 15),
+(2, 19), (13, 19), (14, 19), (24, 19), (15, 5), (15, 16), (16, 5),
+(4, 43), (43, 5), (44, 15), (45, 15), (46, 15), (15, 48), (48, 49),
+(49, 50), (1, 4), (11, 4), (11, 44), (11, 45), (11, 46), (1, 46),
+(1, 6), (11, 6), (13, 6), (2, 6), (13, 14), (13, 21), (21, 22),
+(22, 23), (23, 24), (24, 25), (25, 26), (26, 27), (27, 13);
