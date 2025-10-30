@@ -41,10 +41,10 @@ CREATE TABLE aeropuertos (
 -- TABLA RELACIÓN DE AEROPUERTOS
 -- DROP TABLE conexionesSinEscalas;
 CREATE TABLE conexionesSinEscalas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     id_aeropuertoOrigen INT,
     id_aeropuertoDestino INT,
 
-    PRIMARY KEY (id_aeropuertoOrigen, id_aeropuertoDestino),
     FOREIGN KEY (id_aeropuertoOrigen) REFERENCES aeropuertos(id_aeropuerto),
     FOREIGN KEY (id_aeropuertoDestino) REFERENCES aeropuertos(id_aeropuerto)
 );

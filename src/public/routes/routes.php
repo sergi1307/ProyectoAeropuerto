@@ -459,3 +459,30 @@ $app->post('/connections', function($request, $response, $args) use ($pdo) {
         return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
     }
 });
+
+// DELETE /connections/:id
+
+$app->delete('/connections/{id}', function($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"];
+
+    try {
+        $consulta = $pdo->prepare("
+            DELETE FROM conexionesSinEscalas WHERE id = :id
+        ");
+
+        $consulta->execute([":id" => $id]);
+
+        $response->getBody()->write(json_encode([
+            "mensaje" => "Conexión eliminada con éxito"
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+    } catch (PDOException $error) {
+        $response->getBody()->write(json_encode([
+            "error" => "No se ha podido eliminar la conexión",
+            "detalles" => $error
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
