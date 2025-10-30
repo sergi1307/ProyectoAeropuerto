@@ -11,9 +11,9 @@
 
     require __DIR__ . '/../vendor/autoload.php';
 
-    require __DIR__ . '/bd/bd.php';
-    $db = new Database();
-    $pdo = $db->connect();
+    // require __DIR__ . '/../bd/bd.sql';
+    // $db = new Database();
+    // $pdo = $db->connect();
 
     $app = AppFactory::create();
 

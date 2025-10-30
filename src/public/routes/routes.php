@@ -4,6 +4,10 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request; 
 use Slim\Factory\AppFactory;
 
+require __DIR__ . '/../bd/bd.php';
+$db = new Database();
+$pdo = $db->connect();
+
 // GET CIUDADES GENÉRICAS
 
 $app->get('/cities', function ($request, $response, $args) use ($pdo) {
@@ -338,6 +342,44 @@ $app->post('/airports', function ($request, $response, $args) use ($pdo) {
         $response->getBody()->write(json_encode([
             'error' => 'Error al insertar el aeropuerto',
             'detalle' => $e->getMessage()
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
+// PUT /airport/:id
+
+$app->put('/airport/{id}', function ($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"] ?? '';
+    
+    $datos= json_decode($request->getBody()->getContents(), true);
+    $nombre = $datos['nombre'] ?? '';
+    
+    try {
+
+        $consulta = $pdo->prepare("
+            UPDATE aeropuertos
+            SET nombre = :nombre
+            WHERE id_aeropuerto = :id
+        ");
+
+        $consulta->execute([
+            ":nombre" => $nombre,
+            ":id" => $id
+        ]);
+
+        $response->getBody()->write(json_encode([
+            'mensaje' => 'Aeropuerto actualizado correctamente'
+        ]));
+
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+
+
+    } catch (PDOException $error) {
+        $response->getBody()->write(json_encode([
+            'error' => 'Error al actualizar el aeropuerto',
+            'detalle' => $error->getMessage()
         ], JSON_PRETTY_PRINT));
 
         return $response->withStatus(500)->withHeader('Content-Type', 'application/json');

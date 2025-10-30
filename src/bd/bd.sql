@@ -1,4 +1,4 @@
--- Active: 1761245540698@@127.0.0.1@3306@mysql
+-- Active: 1761849150705@@127.0.0.1@3306@aeropuertos
 DROP DATABASE IF EXISTS aeropuertos;
 
 CREATE DATABASE aeropuertos;
