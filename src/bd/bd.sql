@@ -1,4 +1,4 @@
--- Active: 1761245540698@@127.0.0.1@3306@mysql
+-- Active: 1761849150705@@127.0.0.1@3306@aeropuertos
 DROP DATABASE IF EXISTS aeropuertos;
 
 CREATE DATABASE aeropuertos;
@@ -41,10 +41,10 @@ CREATE TABLE aeropuertos (
 -- TABLA RELACIÓN DE AEROPUERTOS
 -- DROP TABLE conexionesSinEscalas;
 CREATE TABLE conexionesSinEscalas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     id_aeropuertoOrigen INT,
     id_aeropuertoDestino INT,
 
-    PRIMARY KEY (id_aeropuertoOrigen, id_aeropuertoDestino),
     FOREIGN KEY (id_aeropuertoOrigen) REFERENCES aeropuertos(id_aeropuerto),
     FOREIGN KEY (id_aeropuertoDestino) REFERENCES aeropuertos(id_aeropuerto)
 );

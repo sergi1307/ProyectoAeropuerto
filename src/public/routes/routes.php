@@ -4,6 +4,10 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request; 
 use Slim\Factory\AppFactory;
 
+require __DIR__ . '/../bd/bd.php';
+$db = new Database();
+$pdo = $db->connect();
+
 // GET CIUDADES GENÉRICAS
 
 $app->get('/cities', function ($request, $response, $args) use ($pdo) {
@@ -338,6 +342,145 @@ $app->post('/airports', function ($request, $response, $args) use ($pdo) {
         $response->getBody()->write(json_encode([
             'error' => 'Error al insertar el aeropuerto',
             'detalle' => $e->getMessage()
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
+// PUT /airport/:id
+
+$app->put('/airport/{id}', function ($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"] ?? '';
+    
+    $datos= json_decode($request->getBody()->getContents(), true);
+    $nombre = $datos['nombre'] ?? '';
+    
+    try {
+
+        $consulta = $pdo->prepare("
+            UPDATE aeropuertos
+            SET nombre = :nombre
+            WHERE id_aeropuerto = :id
+        ");
+
+        $consulta->execute([
+            ":nombre" => $nombre,
+            ":id" => $id
+        ]);
+
+        $response->getBody()->write(json_encode([
+            'mensaje' => 'Aeropuerto actualizado correctamente'
+        ]));
+
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+
+
+    } catch (PDOException $error) {
+        $response->getBody()->write(json_encode([
+            'error' => 'Error al actualizar el aeropuerto',
+            'detalle' => $error->getMessage()
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
+// DELETE /airport/:id
+
+$app->delete('/airport/{id}', function($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"];
+
+    $aeropuerto = $pdo->prepare("
+        SELECT * FROM aeropuertos WHERE id_aeropuerto = :id
+    ");
+
+    $aeropuerto->execute([":id" => $id]);
+
+    try {
+        $consulta = $pdo->prepare("
+            DELETE FROM aeropuertos WHERE id_aeropuerto = :id
+        ");
+
+        $consulta->execute(["id" => $id]);
+        
+        $response->getBody()->write(json_encode([
+            'mensaje' => 'Aeropuerto eliminado correctamente'
+        ], JSON_PRETTY_PRINT));
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+    } catch(PDOException $error) {
+        $response->getBody->write(json_encode([
+            'mensaje' => "No se ha podido eliminar el aeropuerto",
+            'detalle' => $error
+        ], JSON_PRETTY_PRINT));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+
+});
+
+// POST /connections
+
+$app->post('/connections', function($request, $response, $args) use ($pdo) {
+    $datos = json_decode($request->getBody()->getContents(), true);
+    $aeropuertoOrigen = $datos["aeropuertoOrigen"] ?? '';
+    $aeropuertoDestino = $datos["aeropuertoDestino"] ?? '';
+
+    if ($aeropuertoOrigen != null && $aeropuertoDestino != null) {
+        try {
+            $consulta = $pdo->prepare("
+                INSERT INTO conexionesSinEscalas (id_aeropuertoOrigen, id_aeropuertoDestino) VALUES
+                (:id_aeropuertoOrigen, :id_aeropuertoDestino)
+            ");
+
+            $consulta->execute([
+                ":id_aeropuertoOrigen" => $aeropuertoOrigen,
+                ":id_aeropuertoDestino" => $aeropuertoDestino
+            ]);
+
+            $response->getBody()->write(json_encode([
+                "mensaje" => "Conexión añadida con éxito"
+            ], JSON_PRETTY_PRINT));
+
+            return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+        
+        } catch (PDOException $error) {
+            $response->getBody()->write(json_encode([
+                "error" => "No se ha podido crear la conexión",
+                "detalles" => $error
+            ], JSON_PRETTY_PRINT));
+
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    } else {
+        $response->getBody()->write(json_encode([
+            "error" => "No se han enviado datos suficientes"
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
+// DELETE /connections/:id
+
+$app->delete('/connections/{id}', function($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"];
+
+    try {
+        $consulta = $pdo->prepare("
+            DELETE FROM conexionesSinEscalas WHERE id = :id
+        ");
+
+        $consulta->execute([":id" => $id]);
+
+        $response->getBody()->write(json_encode([
+            "mensaje" => "Conexión eliminada con éxito"
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+    } catch (PDOException $error) {
+        $response->getBody()->write(json_encode([
+            "error" => "No se ha podido eliminar la conexión",
+            "detalles" => $error
         ], JSON_PRETTY_PRINT));
 
         return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
