@@ -385,3 +385,35 @@ $app->put('/airport/{id}', function ($request, $response, $args) use ($pdo) {
         return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
     }
 });
+
+// DELETE /airport/:id
+
+$app->delete('/airport/{id}', function($request, $response, $args) use ($pdo) {
+    $id = (int) $args["id"];
+
+    $aeropuerto = $pdo->prepare("
+        SELECT * FROM aeropuertos WHERE id_aeropuerto = :id
+    ");
+
+    $aeropuerto->execute([":id" => $id]);
+
+    try {
+        $consulta = $pdo->prepare("
+            DELETE FROM aeropuertos WHERE id_aeropuerto = :id
+        ");
+
+        $consulta->execute(["id" => $id]);
+        
+        $response->getBody()->write(json_encode([
+            'mensaje' => 'Aeropuerto eliminado correctamente'
+        ], JSON_PRETTY_PRINT));
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+    } catch(PDOException $error) {
+        $response->getBody->write(json_encode([
+            'mensaje' => "No se ha podido eliminar el aeropuerto",
+            'detalle' => $error
+        ], JSON_PRETTY_PRINT));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+
+});
