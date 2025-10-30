@@ -417,3 +417,45 @@ $app->delete('/airport/{id}', function($request, $response, $args) use ($pdo) {
     }
 
 });
+
+// POST /connections
+
+$app->post('/connections', function($request, $response, $args) use ($pdo) {
+    $datos = json_decode($request->getBody()->getContents(), true);
+    $aeropuertoOrigen = $datos["aeropuertoOrigen"] ?? '';
+    $aeropuertoDestino = $datos["aeropuertoDestino"] ?? '';
+
+    if ($aeropuertoOrigen != null && $aeropuertoDestino != null) {
+        try {
+            $consulta = $pdo->prepare("
+                INSERT INTO conexionesSinEscalas (id_aeropuertoOrigen, id_aeropuertoDestino) VALUES
+                (:id_aeropuertoOrigen, :id_aeropuertoDestino)
+            ");
+
+            $consulta->execute([
+                ":id_aeropuertoOrigen" => $aeropuertoOrigen,
+                ":id_aeropuertoDestino" => $aeropuertoDestino
+            ]);
+
+            $response->getBody()->write(json_encode([
+                "mensaje" => "Conexión añadida con éxito"
+            ], JSON_PRETTY_PRINT));
+
+            return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+        
+        } catch (PDOException $error) {
+            $response->getBody()->write(json_encode([
+                "error" => "No se ha podido crear la conexión",
+                "detalles" => $error
+            ], JSON_PRETTY_PRINT));
+
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    } else {
+        $response->getBody()->write(json_encode([
+            "error" => "No se han enviado datos suficientes"
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});

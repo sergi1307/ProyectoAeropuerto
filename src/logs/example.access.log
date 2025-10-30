@@ -266,3 +266,4 @@
 172.18.0.1 - - [30/Oct/2025:18:54:38 +0000] "PUT /airport/51 HTTP/1.1" 201 275 "-" "Thunder Client (https://www.thunderclient.com)"
 172.18.0.1 - - [30/Oct/2025:18:58:04 +0000] "PUT /airport/51 HTTP/1.1" 201 275 "-" "Thunder Client (https://www.thunderclient.com)"
 172.18.0.1 - - [30/Oct/2025:18:58:46 +0000] "PUT /airport/51 HTTP/1.1" 201 275 "-" "Thunder Client (https://www.thunderclient.com)"
+172.18.0.1 - - [30/Oct/2025:19:06:25 +0000] "DELETE /airport/51 HTTP/1.1" 201 280 "-" "Thunder Client (https://www.thunderclient.com)"
