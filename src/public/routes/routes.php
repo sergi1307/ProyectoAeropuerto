@@ -181,3 +181,165 @@ $app->get('/airport/{id}/connections', function ($request, $response, $args) use
 
     return $response->withHeader('Content-Type', 'application/json');
 });
+
+// GET /connections/with-stops/:from/:to
+
+$app->get('/connections/with-stops/{from}/{to}', function ($request, $response, $args) use ($pdo) {
+    $idOrigen = (int) $args['from'];
+    $idDestino = (int) $args['to'];
+
+    $consulta1 = $pdo->prepare("
+        SELECT 
+            ao.nombre AS origen,
+            ai.nombre AS escala1,
+            ad.nombre AS destino
+        FROM conexionesSinEscalas c1
+        JOIN aeropuertos ao ON c1.id_aeropuertoOrigen = ao.id_aeropuerto
+        JOIN aeropuertos ai ON c1.id_aeropuertoDestino = ai.id_aeropuerto
+        JOIN aeropuertos ad ON ad.id_aeropuerto = :to
+        WHERE ao.id_aeropuerto = :from
+        AND ai.id_aeropuerto != :from
+        AND ai.id_aeropuerto != :to
+    ");
+    $consulta1->execute([':from' => $idOrigen, ':to' => $idDestino]);
+    $rutas1 = $consulta1->fetchAll(PDO::FETCH_ASSOC);
+
+    $consulta2 = $pdo->prepare("
+        SELECT 
+            ao.nombre AS origen,
+            ai1.nombre AS escala1,
+            ai2.nombre AS escala2,
+            ad.nombre AS destino
+        FROM conexionesSinEscalas c1
+        JOIN conexionesSinEscalas c2 ON c1.id_aeropuertoDestino = c2.id_aeropuertoOrigen
+        JOIN conexionesSinEscalas c3 ON c2.id_aeropuertoDestino = c3.id_aeropuertoOrigen
+        JOIN aeropuertos ao ON c1.id_aeropuertoOrigen = ao.id_aeropuerto
+        JOIN aeropuertos ai1 ON c1.id_aeropuertoDestino = ai1.id_aeropuerto
+        JOIN aeropuertos ai2 ON c2.id_aeropuertoDestino = ai2.id_aeropuerto
+        JOIN aeropuertos ad  ON c3.id_aeropuertoDestino = ad.id_aeropuerto
+        WHERE ao.id_aeropuerto = :from
+        AND ad.id_aeropuerto = :to
+        AND ai1.id_aeropuerto NOT IN (:from,:to)
+        AND ai2.id_aeropuerto NOT IN (:from,:to);
+    ");
+    $consulta2->execute([':from' => $idOrigen, ':to' => $idDestino]);
+    $rutas2 = $consulta2->fetchAll(PDO::FETCH_ASSOC);
+
+    $rutas = array_merge($rutas1, $rutas2);
+
+    $datos = [
+        "Conexiones con escalas" => $rutas
+    ];
+
+    $response->getBody()->write(json_encode($datos, JSON_PRETTY_PRINT));
+
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+// GET /airport/:id/connections/with-stops
+
+$app->get('/airport/{id}/connections/with-stops', function ($request, $response, $args) use ($pdo) {
+    $idOrigen = (int) $args['id'];
+    
+    $consulta1 = $pdo->prepare("
+        SELECT
+            ao.nombre AS origen,
+            ai.nombre AS escala,
+            ad.nombre AS destino
+        FROM conexionesSinEscalas c1
+        JOIN conexionesSinEscalas c2 ON c1.id_aeropuertoDestino = c2.id_aeropuertoOrigen
+        JOIN aeropuertos ao ON c1.id_aeropuertoOrigen = ao.id_aeropuerto
+        JOIN aeropuertos ai ON c1.id_aeropuertoDestino = ai.id_aeropuerto
+        JOIN aeropuertos ad ON c2.id_aeropuertoDestino = ad.id_aeropuerto
+        WHERE ao.id_aeropuerto = :from
+        AND ad.id_aeropuerto != :from
+        AND ai.id_aeropuerto NOT IN (:from, ad.id_aeropuerto)
+    ");
+
+    $consulta1->execute([':from' => $idOrigen]);
+    $rutas1 = $consulta1->fetchAll(PDO::FETCH_ASSOC);
+
+    $consulta2 = $pdo->prepare("
+        SELECT 
+            ao.nombre AS origen,
+            ai1.nombre AS escala1,
+            ai2.nombre AS escala2,
+            ad.nombre AS destino
+        FROM conexionesSinEscalas c1
+        JOIN conexionesSinEscalas c2 ON c1.id_aeropuertoDestino = c2.id_aeropuertoOrigen
+        JOIN conexionesSinEscalas c3 ON c2.id_aeropuertoDestino = c3.id_aeropuertoOrigen
+        JOIN aeropuertos ao ON c1.id_aeropuertoOrigen = ao.id_aeropuerto
+        JOIN aeropuertos ai1 ON c1.id_aeropuertoDestino = ai1.id_aeropuerto
+        JOIN aeropuertos ai2 ON c2.id_aeropuertoDestino = ai2.id_aeropuerto
+        JOIN aeropuertos ad  ON c3.id_aeropuertoDestino = ad.id_aeropuerto
+        WHERE ao.id_aeropuerto = :from
+        AND ai1.id_aeropuerto NOT IN (:from, ad.id_aeropuerto)
+        AND ai2.id_aeropuerto NOT IN (:from, ad.id_aeropuerto)
+        AND ad.id_aeropuerto != :from
+    ");
+
+    $consulta2->execute([':from' => $idOrigen]);
+    $rutas2 = $consulta2->fetchAll(PDO::FETCH_ASSOC);
+
+    $rutas = array_merge($rutas1, $rutas2);
+
+    $datos = [
+        "Conexiones con escalas desde aeropuerto $idOrigen" => $rutas
+    ];
+
+    $response->getBody()->write(json_encode($datos, JSON_PRETTY_PRINT));
+
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+// POST /airports
+
+$app->post('/airports', function ($request, $response, $args) use ($pdo) {
+    $data = json_decode($request->getBody()->getContents(), true);
+    $nombre = $data['nombre'] ?? '';
+    $iata = $data['iata'] ?? '';
+    $ciudadId = $data['ciudadId'];
+    $tipo = $data['tipo'];
+    $latitud = $data['latitud'];
+    $longitud = $data['longitud'];
+    $elevacion = $data['elevacion'];
+    $terminales = $data['terminales'];
+    $anyoApertura = $data['anyoApertura'];
+
+    try {
+        $consulta = $pdo->prepare("
+            INSERT INTO aeropuertos
+            (nombre, iata, ciudadId, tipo, latitud, longitud, elevacion, terminales, anyoApertura) VALUES
+            (:nombre, :iata, :ciudadId, :tipo, :latitud, :longitud, :elevacion, :terminales, :anyoApertura)
+        ");
+
+        $consulta->execute([
+            ':nombre' => $nombre,
+            ':iata' => $iata,
+            ':ciudadId' => $ciudadId,
+            ':tipo' => $tipo,
+            ':latitud' => $latitud,
+            ':longitud' => $longitud,
+            ':elevacion' => $elevacion,
+            ':terminales' => $terminales,
+            ':anyoApertura' => $anyoApertura
+        ]);
+
+        $idNuevo = $pdo->lastInsertId();
+
+        $response->getBody()->write(json_encode([
+            'mensaje' => 'Aeropuerto introducido correctamente',
+            'id_inserstado' => $idNuevo
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
+    
+    } catch (PDOException $e) {
+        $response->getBody()->write(json_encode([
+            'error' => 'Error al insertar el aeropuerto',
+            'detalle' => $e->getMessage()
+        ], JSON_PRETTY_PRINT));
+
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
