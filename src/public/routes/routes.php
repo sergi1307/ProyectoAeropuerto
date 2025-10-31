@@ -391,31 +391,53 @@ $app->put('/airport/{id}', function ($request, $response, $args) use ($pdo) {
 $app->delete('/airport/{id}', function($request, $response, $args) use ($pdo) {
     $id = (int) $args["id"];
 
-    $aeropuerto = $pdo->prepare("
-        SELECT * FROM aeropuertos WHERE id_aeropuerto = :id
-    ");
-
-    $aeropuerto->execute([":id" => $id]);
-
     try {
-        $consulta = $pdo->prepare("
-            DELETE FROM aeropuertos WHERE id_aeropuerto = :id
+        $pdo->beginTransaction();
+
+        $consultaExistencia = $pdo->prepare("
+            SELECT * FROM aeropuertos WHERE id_aeropuerto = :id
         ");
 
-        $consulta->execute(["id" => $id]);
-        
+        $consultaExistencia->execute([":id" => $id]);
+        $aeropuerto = $consultaExistencia->fetch(PDO::FETCH_ASSOC);
+
+        if (!$aeropuerto) {
+            $response->getBody()->write(json_encode([
+                "Error" => "El aeropuerto con ese Id no existe."
+            ], JSON_PRETTY_PRINT));
+            return $response->withStatus(404)->withHeader("Content-Type". 'application/json');
+        }
+
+        $consultaEliminarConexiones = $pdo->prepare("
+            DELETE FROM conexionesSinEscalas 
+            WHERE id_aeropuertoOrigen = :id OR id_aeropuertoDestino = :id
+        ");
+        $consultaEliminarConexiones->execute([":id" => $id]);
+        $rutasEliminadas = $consultaEliminarConexiones->rowCount();
+
+        $consultaEliminarAeropuerto = $pdo->prepare("
+            DELETE FROM aeropuertos WHERE :id = id
+        ");
+        $consultaEliminarAeropuerto->execute([":id" => $id]);
+
+        $pdo->commit();
+
         $response->getBody()->write(json_encode([
-            'mensaje' => 'Aeropuerto eliminado correctamente'
+            "mensaje" => "Aeropuerto eliminado correctamente",
+            "rutas_eliminadas" => $rutasEliminadas
         ], JSON_PRETTY_PRINT));
-        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
-    } catch(PDOException $error) {
-        $response->getBody->write(json_encode([
-            'mensaje' => "No se ha podido eliminar el aeropuerto",
-            'detalle' => $error
+
+        return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+    } catch (PDOException $error) {
+        $pdo->rollBack();
+
+        $response->getBody()->write(json_encode([
+            "Error" => "Error al eliminar el aeropuerto",
+            "Detalles" => $error
         ], JSON_PRETTY_PRINT));
+
         return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
     }
-
 });
 
 // POST /connections
